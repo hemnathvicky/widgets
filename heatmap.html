@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalist Habit Heatmap</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        body {
+            background-color: #191919; /* Matches your Notion Dark theme seamless background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            user-select: none;
+            padding: 20px;
+        }
+
+        .heatmap-container {
+            background-color: #222222; /* Matches your Quote/Clock cards */
+            border: 2px solid #3a322d; 
+            border-radius: 30px;
+            padding: 24px;
+            width: 670px; /* Sized to perfectly stretch horizontally */
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .heatmap-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .heatmap-title {
+            color: #e6dfd3; /* Matches your widget font color */
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .grid-wrapper {
+            display: flex;
+            gap: 4px; /* Clean spacing between columns */
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        /* Standard GitHub-style 7-day columns */
+        .grid-column {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        /* Interactive square boxes */
+        .grid-square {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            background-color: #2d2d2d; /* Default empty habit day */
+            cursor: pointer;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+        }
+
+        /* Hover effect to hint interactivity */
+        .grid-square:hover {
+            transform: scale(1.15);
+            outline: 1px solid #b3aaa2;
+        }
+
+        /* Color stages based on your custom palette themes */
+        .grid-square.level-1 { background-color: #443c37; }
+        .grid-square.level-2 { background-color: #73655a; }
+        .grid-square.level-3 { background-color: #bfae9e; }
+        .grid-square.level-4 { background-color: #e6dfd3; } /* Maximum streak glow */
+
+        /* Minimal scrollbar adjustment */
+        .grid-wrapper::-webkit-scrollbar {
+            height: 6px;
+        }
+        .grid-wrapper::-webkit-scrollbar-thumb {
+            background-color: #3a322d;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="heatmap-container">
+        <div class="heatmap-header">
+            <div class="heatmap-title">Habit Consistency Grid</div>
+        </div>
+        
+        <div class="grid-wrapper" id="grid-target"></div>
+    </div>
+
+    <script>
+        const gridTarget = document.getElementById('grid-target');
+        
+        // Let's render 35 weeks (spanning back across the layout gracefully)
+        const totalWeeks = 35; 
+        const daysPerWeek = 7;
+
+        // Local Storage unique identifier key to preserve your data across sessions
+        const STORAGE_KEY = 'notion_habit_heatmap_data';
+
+        // Read saved records, or initiate a brand new grid profile
+        let habitRecords = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+
+        // Generate the structural node layout
+        for (let w = 0; w < totalWeeks; w++) {
+            const column = document.createElement('div');
+            column.className = 'grid-column';
+
+            for (let d = 0; d < daysPerWeek; d++) {
+                const square = document.createElement('div');
+                square.className = 'grid-square';
+                
+                // Establish unique structural coordinate assignment
+                const squareId = `w${w}-d${d}`;
+                
+                // Apply visual color fill if a past selection value is located
+                if (habitRecords[squareId]) {
+                    square.classList.add(`level-${habitRecords[squareId]}`);
+                }
+
+                // Interactive clicking logic to increase opacity/intensity step-by-step
+                square.addEventListener('click', () => {
+                    let currentLevel = habitRecords[squareId] || 0;
+                    
+                    // Cycle smoothly through 5 visual states (0 to 4)
+                    square.classList.remove(`level-${currentLevel}`);
+                    currentLevel = (currentLevel + 1) % 5;
+                    
+                    if (currentLevel > 0) {
+                        square.classList.add(`level-${currentLevel}`);
+                        habitRecords[squareId] = currentLevel;
+                    } else {
+                        delete habitRecords[squareId];
+                    }
+
+                    // Securely update local data values inside your browser caching system
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(habitRecords));
+                });
+
+                column.appendChild(square);
+            }
+            gridTarget.appendChild(column);
+        }
+    </script>
+
+</body>
+</html>
