@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed Height Dark Calendar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        body {
+            background-color: #191919;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            user-select: none;
+        }
+
+        /* Enforced a strict height so the container never changes size */
+        .calendar-card {
+            background-color: #222222; 
+            width: 320px;
+            height: 395px; /* Hard-locked height to prevent layout shifts */
+            padding: 30px 24px;
+            border-radius: 40px; 
+            border: 2px solid #3a322d; 
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .year-header {
+            font-size: 14px;
+            color: #8c827b; 
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            font-weight: 400;
+        }
+
+        .month-selector {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            margin-bottom: 20px;
+        }
+
+        .month-name {
+            font-size: 24px;
+            font-weight: 500;
+            color: #e6dfd3; 
+        }
+
+        .arrow {
+            font-size: 20px;
+            color: #8c827b;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            padding: 5px 10px;
+        }
+
+        .arrow:hover {
+            color: #e6dfd3;
+        }
+
+        .weekdays-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            margin-bottom: 12px;
+        }
+
+        .weekdays-grid div {
+            font-size: 14px;
+            font-weight: 400;
+            color: #8c827b;
+            text-transform: uppercase;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            row-gap: 10px;
+            flex-grow: 1;
+        }
+
+        .days-grid div {
+            font-size: 16px;
+            font-weight: 400;
+            color: #b3aaa2;
+            height: 34px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .days-grid div.today {
+            color: #191919;
+            font-weight: 600;
+            background-color: #d1bfa7; 
+            border-radius: 50%;
+            width: 34px;
+            margin: 0 auto;
+        }
+
+        .days-grid div.empty {
+            visibility: hidden; /* Elements still exist structurally but remain blank */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calendar-card">
+        <div class="year-header" id="year">2026</div>
+        <div class="month-selector">
+            <span class="arrow" id="prev-btn">&lt;</span>
+            <span class="month-name" id="month-display">July</span>
+            <span class="arrow" id="next-btn">&gt;</span>
+        </div>
+        
+        <div class="weekdays-grid">
+            <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+        </div>
+        
+        <div class="days-grid" id="days-container"></div>
+    </div>
+
+    <script>
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        
+        let today = new Date();
+        let currentMonth = today.getMonth();
+        let currentYear = today.getFullYear();
+
+        const yearDisplay = document.getElementById("year");
+        const monthDisplay = document.getElementById("month-display");
+        const daysContainer = document.getElementById("days-container");
+
+        function renderCalendar(month, year) {
+            daysContainer.innerHTML = "";
+            
+            yearDisplay.textContent = year;
+            monthDisplay.textContent = monthNames[month];
+
+            let firstDayIndex = new Date(year, month, 1).getDay();
+            let totalDays = new Date(year, month + 1, 0).getDate();
+
+            // 1. Render empty offset spacing blocks
+            for (let i = 0; i < firstDayIndex; i++) {
+                let emptyDiv = document.createElement("div");
+                emptyDiv.classList.add("empty");
+                daysContainer.appendChild(emptyDiv);
+            }
+
+            // 2. Populate active calendar numerical days
+            for (let day = 1; day <= totalDays; day++) {
+                let dayDiv = document.createElement("div");
+                dayDiv.textContent = day;
+
+                if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                    dayDiv.classList.add("today");
+                }
+
+                daysContainer.appendChild(dayDiv);
+            }
+
+            // 3. FILL THE REST: Pad trailing spots so grid ALWAYS totals 42 cells (6 full rows)
+            let totalSlotsUsed = firstDayIndex + totalDays;
+            let remainingBlankSlots = 42 - totalSlotsUsed;
+            
+            for (let i = 0; i < remainingBlankSlots; i++) {
+                let emptyDiv = document.createElement("div");
+                emptyDiv.classList.add("empty");
+                daysContainer.appendChild(emptyDiv);
+            }
+        }
+
+        document.getElementById("prev-btn").addEventListener("click", () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar(currentMonth, currentYear);
+        });
+
+        document.getElementById("next-btn").addEventListener("click", () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar(currentMonth, currentYear);
+        });
+
+        renderCalendar(currentMonth, currentYear);
+    </script>
+
+</body>
+</html>
